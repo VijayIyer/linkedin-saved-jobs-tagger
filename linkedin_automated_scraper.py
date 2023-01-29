@@ -2,10 +2,22 @@ from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
+from selenium.webdriver.firefox.options import Options
+import os
+from dotenv import load_dotenv
+
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+password = os.environ.get('LINKEDIN_PASSWORD')
+username = os.environ.get('LINKEDIN_USERNAME')
 
 def initialize():
     ### load selenium driver
-    driver = webdriver.Firefox()
+    options = Options()
+    options.headless = True
+    driver = webdriver.Firefox(log_path='./Log/geckodriver.log', options = options)
     return driver
 
 def login(driver):
@@ -49,8 +61,8 @@ def get_job_details_in_page(driver, saved_jobs):
         saved_jobs_dict['job_id'] = job_title_link['href'].split('/')[-2]
         saved_jobs_dict['company'] = company.get_text().strip()
         saved_jobs_dict['company_thumbnail'] = get_job_image(driver, job)
-        print('{}:{}:{}:{}:{}'.format(saved_jobs_dict['title'].strip(), saved_jobs_dict['link'].strip(), saved_jobs_dict['company'], saved_jobs_dict['company_thumbnail'], saved_jobs_dict['job_id']))
-        print('\n')
+        # print('{}:{}:{}:{}:{}'.format(saved_jobs_dict['title'].strip(), saved_jobs_dict['link'].strip(), saved_jobs_dict['company'], saved_jobs_dict['company_thumbnail'], saved_jobs_dict['job_id']))
+        # print('\n')
         saved_jobs_list.append(saved_jobs_dict)
     
     return saved_jobs_list
@@ -73,18 +85,21 @@ def extract_jobs(driver, url, num_jobs = 0, count = 0):
         print(num_jobs + len(saved_jobs), count + 1)
         saved_jobs_list = saved_jobs_list + extract_jobs(driver, url, num_jobs + len(saved_jobs), count + 1)
     
+    print(len(saved_jobs_list))
     return saved_jobs_list
     
 def extract_all_saved_jobs():
+    saved_jobs_list = []
     try:
         driver = initialize()
         login(driver)
         saved_jobs_list = extract_jobs(driver, "https://linkedin.com/my-items/saved-jobs")
-        print(saved_jobs_list)
+        
     except Exception as e:
         print(e)
     finally:
         driver.close()
+        return saved_jobs_list
 
 
 if __name__== "__main__":
